@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Công ty</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Copy CSS từ admin_users.ejs */
+        body { font-family: sans-serif; margin: 0; background-color: #f8f9fa; }
+        .header { background-color: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+        .header a { color: #ffc107; text-decoration: none; }
+        .container { padding: 2rem; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 0.75rem; border: 1px solid #dee2e6; text-align: left; }
+        th { background-color: #e9ecef; }
+        .action-buttons a { margin-right: 0.5rem; color: #007bff; text-decoration: none; }
+        .action-buttons a.delete { color: #dc3545; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: #007bff; text-decoration: none;}
+        .back-link i { margin-right: 0.5rem; }
+        td img.logo { max-height: 30px; vertical-align: middle; margin-right: 10px; } /* CSS cho logo */
+    .action-buttons button { /* Style cho nút bấm */
+            background: none; border: none; padding: 0; cursor: pointer; margin-right: 0.5rem; color: #007bff;
+        }
+        .action-buttons button.delete { color: #dc3545; }
+        .action-buttons button i { margin-right: 0.3rem; }
+        td img.logo { max-height: 30px; vertical-align: middle; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Quản lý Công ty</h1>
+        <a href="/api/admin/logout">Đăng xuất</a>
+    </div>
+
+    <div class="container">
+        <a href="/api/admin/dashboard" class="back-link"><i class="fas fa-arrow-left"></i> Quay lại Dashboard</a>
+        <h2>Danh sách Công ty</h2>
+
+        <% if (typeof companies !== 'undefined' && companies.length > 0) { %>
+            <table id="company-table"> <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Logo</th>
+                        <th>Tên Công ty</th>
+                        <th>Địa chỉ</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% companies.forEach(company => { %>
+                        <tr data-company-id="<%= company.id %>"> <td><%= company.id %></td>
+                            <td>
+                                <% if (company.logo_url) { %>
+                                    <img src="<%= company.logo_url %>" alt="Logo" class="logo">
+                                <% } %>
+                            </td>
+                            <td class="company-name"><%= company.name %></td>
+                            <td class="company-address"><%= company.address || 'N/A' %></td>
+                            <td class="action-buttons">
+                                <a href="/api/admin/companies/<%= company.id %>/edit">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </a>
+                                <button class="delete" onclick="deleteCompany('<%= company.id %>')">
+                                    <i class="fas fa-trash-alt"></i> Xóa
+                                </button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <p>Không có công ty nào.</p>
+        <% } %>
+    </div>
+
+    <script>
+        function getAuthToken() { return localStorage.getItem('adminToken'); }
+        function createAuthHeaders() {
+            const token = getAuthToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) { headers['Authorization'] = `Bearer ${token}`; }
+            return headers;
+        }
+
+        // Hàm sửa thông tin công ty
+        function editCompany(companyId) {
+             const row = document.querySelector(`tr[data-company-id="${companyId}"]`);
+             if (!row) return;
+
+             const currentName = row.querySelector('.company-name')?.textContent || '';
+             const currentAddress = row.querySelector('.company-address')?.textContent || '';
+             // Lấy description và logo_url nếu cần (có thể cần query ẩn)
+             // const currentDescription = ...;
+             // const currentLogoUrl = ...;
+
+
+            const newName = prompt("Nhập tên công ty mới:", currentName);
+            if (newName === null) return;
+            const newAddress = prompt("Nhập địa chỉ mới:", currentAddress);
+             if (newAddress === null) return;
+             const newDescription = prompt("Nhập mô tả mới:", ''); // Lấy description nếu có
+             if (newDescription === null) return;
+             const newLogoUrl = prompt("Nhập URL logo mới (để trống nếu không đổi):", ''); // Lấy logo url nếu có
+             if (newLogoUrl === null) return;
+
+
+            if (!newName.trim()) {
+                alert("Tên công ty không được để trống.");
+                return;
+            }
+
+            const updatedData = {
+                name: newName,
+                address: newAddress,
+                description: newDescription,
+                logo_url: newLogoUrl.trim() || null // Gửi null nếu để trống
+            };
+
+            fetch(`/api/admin/companies/${companyId}`, {
+                method: 'PUT',
+                headers: createAuthHeaders(),
+                body: JSON.stringify(updatedData)
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, body: data })))
+            .then(({ ok, body }) => {
+                alert(body.message || 'Có lỗi xảy ra.');
+                if (ok) {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi cập nhật công ty.');
+            });
+        }
+
+        // Hàm xóa công ty
+        function deleteCompany(companyId) {
+            if (confirm(`Bạn có chắc chắn muốn xóa Công ty ID ${companyId} không? Các tin tuyển dụng thuộc công ty này sẽ bị hủy liên kết.`)) {
+                fetch(`/api/admin/companies/${companyId}`, {
+                    method: 'DELETE',
+                    headers: createAuthHeaders()
+                })
+                .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                .then(({ status, body }) => {
+                    alert(body.message || 'Có lỗi xảy ra.');
+                     if (status === 200) {
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi xóa công ty.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

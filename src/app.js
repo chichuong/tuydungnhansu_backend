@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http'); 
 const { Server } = require("socket.io");
+const session = require('express-session');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
@@ -31,12 +32,24 @@ const io = new Server(server, {
   }
 });
 
+// --- CẤU HÌNH EJS ---
+app.set('view engine', 'ejs'); 
+app.set('views', path.join(__dirname, 'views'));
+
 const port = process.env.SERVER_PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json()); 
+app.use(express.urlencoded({ extended: false }));
 app.use('/public', express.static(path.join(__dirname, '../public')));
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'mot-chuoi-bi-mat-rat-dai', // Nên đặt biến này trong .env
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Đặt là true nếu dùng HTTPS
+}));
 
 // Chạy service của Socket.IO
 socketService.init(io);

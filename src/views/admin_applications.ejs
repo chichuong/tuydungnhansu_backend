@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Hồ sơ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Copy CSS từ các file admin khác */
+        body { font-family: sans-serif; margin: 0; background-color: #f8f9fa; }
+        .header { background-color: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+        .header a { color: #ffc107; text-decoration: none; }
+        .container { padding: 2rem; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 0.75rem; border: 1px solid #dee2e6; text-align: left; }
+        th { background-color: #e9ecef; }
+        .action-buttons a { margin-right: 0.5rem; color: #007bff; text-decoration: none; }
+        .action-buttons a.delete { color: #dc3545; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: #007bff; text-decoration: none;}
+        .back-link i { margin-right: 0.5rem; }
+        /* Thêm style cho chip trạng thái */
+        .status-chip { padding: 0.2rem 0.6rem; border-radius: 12px; color: white; font-size: 0.8rem; text-transform: capitalize; }
+        .status-pending { background-color: #6c757d; }
+        .status-screening { background-color: #007bff; }
+        .status-interviewing, .status-passed_interview { background-color: #fd7e14; }
+        .status-offered { background-color: #28a745; }
+        .status-rejected { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Quản lý Hồ sơ</h1>
+        <a href="/api/admin/logout">Đăng xuất</a>
+    </div>
+
+    <div class="container">
+        <a href="/api/admin/dashboard" class="back-link"><i class="fas fa-arrow-left"></i> Quay lại Dashboard</a>
+        <h2>Danh sách Hồ sơ Ứng tuyển</h2>
+
+        <% if (typeof applications !== 'undefined' && applications.length > 0) { %>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ứng viên</th>
+                        <th>Vị trí</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% applications.forEach(app => { %>
+                        <tr>
+                            <td><%= app.id %></td>
+                            <td><%= app.candidate_name %></td>
+                            <td><%= app.job_title %></td>
+                            <td>
+                                <span class="status-chip status-<%= app.status %>">
+                                    <%= app.status %>
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                <a href="/api/admin/applications/<%= app.id %>/details">
+                                    <i class="fas fa-eye"></i> Xem Chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <p>Chưa có hồ sơ ứng tuyển nào.</p>
+        <% } %>
+    </div>
+</body>
+</html>

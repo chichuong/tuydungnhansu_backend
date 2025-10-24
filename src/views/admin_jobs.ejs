@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Việc làm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Copy CSS từ các file admin khác */
+        body { font-family: sans-serif; margin: 0; background-color: #f8f9fa; }
+        .header { background-color: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+        .header a { color: #ffc107; text-decoration: none; }
+        .container { padding: 2rem; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 0.75rem; border: 1px solid #dee2e6; text-align: left; }
+        th { background-color: #e9ecef; }
+        .action-buttons button { background: none; border: none; padding: 0; cursor: pointer; margin-right: 0.5rem; color: #007bff; }
+        .action-buttons button.delete { color: #dc3545; }
+         .action-buttons button i { margin-right: 0.3rem; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: #007bff; text-decoration: none;}
+        .back-link i { margin-right: 0.5rem; }
+         .status-chip { padding: 0.2rem 0.6rem; border-radius: 12px; color: white; font-size: 0.8rem; text-transform: capitalize; display: inline-block; }
+         .status-open { background-color: #28a745; }
+         .status-closed { background-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Quản lý Việc làm</h1>
+        <a href="/api/admin/logout">Đăng xuất</a>
+    </div>
+
+    <div class="container">
+        <a href="/api/admin/dashboard" class="back-link"><i class="fas fa-arrow-left"></i> Quay lại Dashboard</a>
+        <h2>Danh sách Việc làm</h2>
+
+        <% if (typeof jobs !== 'undefined' && jobs.length > 0) { %>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tiêu đề</th>
+                        <th>Công ty</th>
+                        <th>Địa điểm</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% jobs.forEach(job => { %>
+                        <tr data-job-id="<%= job.id %>">
+                            <td><%= job.id %></td>
+                            <td><%= job.title %></td>
+                            <td><%= job.company_name || 'N/A' %></td>
+                            <td><%= job.location || 'N/A' %></td>
+                            <td>
+                                <span class="status-chip status-<%= job.status %>">
+                                    <%= job.status %>
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                <!-- SỬA NÚT NÀY THÀNH LINK -->
+                                <a href="/api/admin/jobs/<%= job.id %>/edit">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </a>
+                                <button class="delete" onclick="deleteJob('<%= job.id %>')">
+                                    <i class="fas fa-trash-alt"></i> Xóa
+                                </button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <p>Không có việc làm nào.</p>
+        <% } %>
+    </div>
+
+     <script>
+        // Lấy token và tạo headers (copy từ các file EJS khác)
+        function getAuthToken() { return localStorage.getItem('adminToken'); }
+        function createAuthHeaders(includeContentType = true) {
+            const token = getAuthToken();
+            const headers = {};
+            if (includeContentType) {
+                headers['Content-Type'] = 'application/json';
+            }
+            if (token) { headers['Authorization'] = `Bearer ${token}`; }
+            return headers;
+        }
+
+        // Hàm sửa Job (Tạm thời chỉ ví dụ, cần tạo trang sửa riêng như User/Company)
+        function editJob(jobId) {
+            alert(`Chức năng sửa Job ID ${jobId} chưa được cài đặt. Cần tạo trang sửa riêng.`);
+            // window.location.href = `/api/admin/jobs/${jobId}/edit`; // Link tới trang sửa (nếu có)
+        }
+
+        // Hàm xóa Job
+        function deleteJob(jobId) {
+            if (confirm(`Bạn có chắc chắn muốn xóa Việc làm ID ${jobId} không?`)) {
+                fetch(`/api/jobs/${jobId}`, { // API xóa Job đã có sẵn
+                    method: 'DELETE',
+                    headers: createAuthHeaders(false) // Không cần Content-Type cho DELETE
+                })
+                .then(response => response.json().then(data => ({ ok: response.ok, body: data })))
+                .then(({ ok, body }) => {
+                    alert(body.message || 'Có lỗi xảy ra.');
+                     if (ok) {
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi khi xóa việc làm:', error);
+                    alert(`Lỗi khi xóa việc làm: ${error.message || 'Lỗi không xác định'}`);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
